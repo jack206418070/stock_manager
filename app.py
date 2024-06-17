@@ -593,7 +593,7 @@ def logout():
 @app.route('/getData')
 def getData():
   data = []
-  temp_data = dbs.test.find({})
+  temp_data = dbs.appliance.find({})
   for doc in temp_data:
     del doc['_id']
     status = doc.get('status', 0)
@@ -624,7 +624,7 @@ def getData():
 def comfrim_order():
   json_data = request.get_json()
   for doc in json_data:
-    dbs.test.update_one({"name": doc['name']}, {"$set": {"status": 2, "add_tools": doc['add_tools'], "add_date": doc['add_date']}})
+    dbs.appliance.update_one({"name": doc['name']}, {"$set": {"status": 2, "add_tools": doc['add_tools'], "add_date": doc['add_date']}})
   return jsonify({"status": "success"}), 200
 
 
@@ -651,7 +651,7 @@ def write_off():
     status = 2
   json_data['initial_quantity'] += json_data['unit_quantity'] * (all_count - temp_count) 
   temp_count += (all_count - temp_count)
-  dbs.test.update_one({"name":json_data['name']}, {"$set": {"status": status, "writeOff_data": json_data['writeOff_data'], "add_date": json_data['add_date'], "add_tools": json_data['add_tools'], "initial_quantity": json_data['initial_quantity'], "temp_count": temp_count}})
+  dbs.appliance.update_one({"name":json_data['name']}, {"$set": {"status": status, "writeOff_data": json_data['writeOff_data'], "add_date": json_data['add_date'], "add_tools": json_data['add_tools'], "initial_quantity": json_data['initial_quantity'], "temp_count": temp_count}})
   return jsonify({"status": "success"}), 200
 
 @app.route('/')
@@ -664,15 +664,15 @@ def tool_setting():
   if request.method == 'POST':
     json_data = request.get_json()
     if json_data['methods'] == 'edit':
-      dbs.test.update_one({"name": json_data['name']}, {"$set": {"initial_quantity": json_data['initial_quantity'], "current_quantity": json_data['current_quantity']}})
+      dbs.appliance.update_one({"name": json_data['name']}, {"$set": {"initial_quantity": json_data['initial_quantity'], "current_quantity": json_data['current_quantity']}})
     elif json_data['methods'] == 'delete':
       print(json_data['name'])
-      dbs.test.delete_one({"name": json_data['name']})
+      dbs.appliance.delete_one({"name": json_data['name']})
     else:
       del json_data['methods']
-      dbs.test.insert_one(json_data)
+      dbs.appliance.insert_one(json_data)
 
-  temp_data = dbs.test.find({})
+  temp_data = dbs.appliance.find({})
   for doc in temp_data:
     del doc['_id']
     if doc['current_quantity'] >= doc['initial_quantity']:
@@ -690,7 +690,7 @@ def tool_setting():
 @app.route('/get_toolName')
 def get_toolName():
   tool_name = []
-  temp_data = dbs.test.find({})
+  temp_data = dbs.appliance.find({})
   for idx, doc in enumerate(temp_data):
     tool_name.append({
       "id": idx + 1,
@@ -711,7 +711,7 @@ def operation_page():
 @app.route('/get_operation')
 def get_operation():
   operation_data = []
-  temp_data = dbs.test_operation.find({})
+  temp_data = dbs.operation.find({})
   for doc in temp_data:
     del doc['_id']
     operation_data.append(doc)
@@ -720,16 +720,16 @@ def get_operation():
 @app.route('/create_operation', methods=['POST'])
 def create_operation():
   json_data = request.get_json()
-  data = dbs.test_operation.find_one({"name": json_data['name']})
+  data = dbs.operation.find_one({"name": json_data['name']})
   if data == None:
-    dbs.test_operation.insert_one({"name": json_data['name'], "instruments": []})
+    dbs.operation.insert_one({"name": json_data['name'], "instruments": []})
   return jsonify({})
 
 
 @app.route('/operation_setting', methods=['POST'])
 def operation_setting():
   json_data = request.get_json()
-  dbs.test_operation.update_one({"name": json_data['name']}, {"$set": {"instruments": json_data['instruments']}})
+  dbs.operation.update_one({"name": json_data['name']}, {"$set": {"instruments": json_data['instruments']}})
   return jsonify({})
 
 
@@ -738,7 +738,7 @@ def operation_sub_tools():
   json_data = request.get_json()
   sub_list = []
   op_count = json_data['count']
-  op_data = dbs.test_operation.find_one({"name": json_data['name']})
+  op_data = dbs.operation.find_one({"name": json_data['name']})
 
   for doc in op_data['instruments']:
     sub_list.append(
@@ -749,12 +749,12 @@ def operation_sub_tools():
     )
 
   for doc in sub_list:
-    current_quantity = dbs.test.find_one({"name": doc['name']}, {"initial_quantity": 1})
+    current_quantity = dbs.appliance.find_one({"name": doc['name']}, {"initial_quantity": 1})
     if current_quantity:
       new_quantity = current_quantity['initial_quantity'] - doc['count']
       if new_quantity < 0:
           new_quantity = 0
-      dbs.test.update_one({"name": doc['name']}, {"$set": {"initial_quantity": new_quantity}})
+      dbs.appliance.update_one({"name": doc['name']}, {"$set": {"initial_quantity": new_quantity}})
   
   return jsonify({})
   
