@@ -398,8 +398,8 @@
         <input type="number" v-model="temp_surgeries.count" id="surgeries_count">
       </div>
       <div class="btn-group">
-        <a href="javascript:;" @click="surgeries_model = false, temp_surgeries = {name: '', count: 1}">取消</a>
         <a href="javascript:;" @click="deduct_tools">確認執行</a>
+        <a href="javascript:;" @click="surgeries_model = false, temp_surgeries = {name: '', count: 1}">取消</a>
       </div>
     </div>
     <div class="mask" v-if="surgeries_model"></div>

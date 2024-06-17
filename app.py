@@ -18,6 +18,9 @@ client = MongoClient(connection_string)
 app.secret_key = 'your_secret_key_here'
 dbs = client.tools
 
+# db_collection1 = 'test'
+# db_collection2 = 'test_operation'
+
 db_collection1 = 'appliance'
 db_collection2 = 'operation'
 # temp_data = [
