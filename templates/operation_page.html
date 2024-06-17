@@ -166,7 +166,8 @@
         </div>
         <h3>已選擇的器具:</h3>
         <ul style="height: 350px; overflow-y: scroll; list-style: dotted; padding-left: 10px;">
-          <li v-for="(instrument, index) in currentSurgery.instruments" :key="index" style="display: flex; align-items: center; gap: 15px; margin-bottom: 8px;">
+          <li v-for="(instrument, index) in currentSurgery.instruments" :key="index"
+            style="display: flex; align-items: center; gap: 15px; margin-bottom: 8px;">
             <div>
               [[ instrument.name ]] - [[ instrument.quantity ]]個
             </div>
@@ -187,6 +188,7 @@
       <div v-for="(surgery, index) in surgeries" :key="index" class="surgery-item">
         [[ surgery.name ]]
         <div>
+          <button @click.stop="openEditSurgeryNameModal(index)">更改手術名稱</button>
           <button @click.stop="openInstrumentModal(index)">新增/編輯器具</button>
         </div>
       </div>
@@ -243,6 +245,32 @@
         selectSurgery(index) {
           this.currentSurgery = this.surgeries[index];
           this.resetForm();
+        },
+        async openEditSurgeryNameModal(index) {
+          const surgery = this.surgeries[index];
+          const { value: newName } = await Swal.fire({
+            title: '更改手術名稱',
+            input: 'text',
+            inputValue: surgery.name,
+            showCancelButton: true,
+            inputValidator: (value) => {
+              if (!value) {
+                return '請輸入新的手術名稱';
+              }
+            }
+          });
+
+          if (newName) {
+            try {
+              const response = await axios.post('/update_operation_name', {
+                old_name: surgery.name,
+                new_name: newName
+              });
+              await this.get_operations(); // 重新抓取手術資料
+            } catch (error) {
+              console.error('更新手術名稱時發生錯誤:', error);
+            }
+          }
         },
         async addInstrument() {
           if (this.selectedInstrument && this.instrumentQuantity > 0) {

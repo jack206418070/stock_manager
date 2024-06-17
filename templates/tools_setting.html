@@ -82,6 +82,7 @@
         text-decoration: none;
       }
     }
+
     .add-modal {
       position: fixed;
       width: 40%;
@@ -95,11 +96,13 @@
       box-shadow: 1px 0 4px rgba(0, 0, 0, .3);
       display: flex;
       flex-direction: column;
+
       h2 {
         margin: 0;
         text-align: center;
         font-size: 18px;
       }
+
       .btn-group {
         padding: 0 16px;
         display: flex;
@@ -108,6 +111,7 @@
         gap: 40px;
         margin-top: auto;
         margin-bottom: 0;
+
         a {
           text-decoration: none;
           display: block;
@@ -117,11 +121,77 @@
         }
       }
     }
+
+    .edit-modal {
+      position: fixed;
+      width: 40%;
+      height: 400px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10000;
+      padding: 16px 0;
+      background-color: #fff;
+      box-shadow: 1px 0 4px rgba(0, 0, 0, .3);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .edit-modal h2 {
+      margin: 0;
+      text-align: center;
+      font-size: 18px;
+    }
+
+    .edit-modal .btn-group {
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      margin-top: auto;
+      margin-bottom: 0;
+    }
+
+    .edit-modal .btn-group a {
+      text-decoration: none;
+      display: block;
+      background-color: rgb(109, 109, 222);
+      color: #fff;
+      padding: 3px 12px;
+    }
   </style>
 </head>
 
 <body>
   <div id="app">
+    <div class="edit-modal" v-if="show_edit_modal">
+      <h2>修改產品</h2>
+      <div style="padding: 12px">
+        <span style="padding-right: 10px;">器具名稱:</span>
+        <input type="text" v-model="edit_data.name">
+      </div>
+      <div style="padding: 12px">
+        <span style="padding-right: 10px;">目前數量:</span>
+        <input type="text" v-model="edit_data.initial_quantity">
+      </div>
+      <div style="padding: 12px">
+        <span style="padding-right: 10px;">單位數量:</span>
+        <input type="text" v-model="edit_data.unit_quantity">
+      </div>
+      <div style="padding: 12px">
+        <span style="padding-right: 10px;">最低庫存 (單位):</span>
+        <input type="text" v-model="edit_data.unit_count">
+      </div>
+      <div style="padding: 12px">
+        <span style="padding-right: 10px;">單位:</span>
+        <input type="text" v-model="edit_data.unit">
+      </div>
+      <div class="btn-group">
+        <a href="javascript:;" @click="show_edit_modal = false">取消</a>
+        <a href="javascript:;" @click="saveEditTools">確定</a>
+      </div>
+    </div>
     <div class="add-modal" v-if="show_modal == true">
       <h2>新增產品</h2>
       <div style="padding: 12px">
@@ -139,6 +209,10 @@
       <div style="padding: 12px">
         <span style="padding-right: 10px;">最低庫存 (單位):</span>
         <input type="text" v-model="add_data.unit_count">
+      </div>
+      <div style="padding: 12px">
+        <span style="padding-right: 10px;">單位:</span>
+        <input type="text" v-model="add_data.unit">
       </div>
       <div class="btn-group">
         <a href="javascript:;" @click="hide_modal">取消</a>
@@ -159,12 +233,14 @@
       </div>
       <a href="javascript:;" @click="show_modal = true">新增器具</a>
     </div>
+
     <table class="styled-table">
       <thead>
         <tr>
           <th>品項名稱</th>
           <th>最低庫存</th>
           <th>目前庫存</th>
+          <th>單位</th>
           <th>操作</th>
         </tr>
       </thead>
@@ -173,18 +249,15 @@
           <tr v-for="(item, idx) in tool_data">
             <td>[[ item.name ]]</td>
             <td>
-              <input style="width: 30px; text-align: center;" type="text" :value="getRoundedQuantity(item)"
-                @input="updateQuantity($event, item)">
-              [[ item.unit ]]
+              [[ getRoundedQuantity(item) ]] [[ item.unit ]]
               <span style="padding-left: 20px;">
                 [[ item.unit_quantity ]] / [[ item.unit ]]
               </span>
             </td>
-            <td>
-              <input type="text" v-model="item.initial_quantity">
-            </td>
+            <td>[[ item.initial_quantity ]]</td>
+            <td>[[ item.unit ]]</td>
             <td class="btn-group">
-              <a style="color: rgb(58, 58, 195)" href="javascript:;" @click="editTools(idx)">修改</a>
+              <a style="color: rgb(58, 58, 195)" href="javascript:;" @click="editTools(item)">修改</a>
               <a style="color: rgb(220, 85, 92)" href="javascript:;" @click="deleteTools(idx)">刪除</a>
             </td>
           </tr>
@@ -193,23 +266,19 @@
           <tr v-for="(item, idx) in search_data">
             <td>[[ item.name ]]</td>
             <td>
-              <input style="width: 30px; text-align: center;" type="text" :value="getRoundedQuantity(item)"
-                @input="updateQuantity($event, item)">
-              [[ item.unit ]]
+              [[ getRoundedQuantity(item) ]] [[ item.unit ]]
               <span style="padding-left: 20px;">
                 [[ item.unit_quantity ]] / [[ item.unit ]]
               </span>
             </td>
-            <td>
-              <input type="text" v-model="item.initial_quantity">
-            </td>
+            <td>[[ item.initial_quantity ]]</td>
+            <td>[[ item.unit ]]</td>
             <td class="btn-group">
               <a style="color: rgb(58, 58, 195)" href="javascript:;" @click="editTools(item)">修改</a>
               <a style="color: rgb(220, 85, 92)" href="javascript:;" @click="deleteTools(item)">刪除</a>
             </td>
           </tr>
         </template>
-        <!-- More rows as needed -->
       </tbody>
     </table>
   </div>
@@ -228,16 +297,23 @@
             name: '',
             initial_quantity: 0,
             unit_quantity: 1,
-            unit_count: 0
-          }
+            unit_count: 0,
+            unit: ''
+          },
+          show_edit_modal: false,
+          edit_data: {}
         }
       },
       methods: {
-        getData() {
-          axios.get('/tool_setting')
+        async getData() {
+          this.tool_data = [];
+          await axios.get('/tool_setting')
             .then(res => {
               console.log(res);
-              this.tool_data = res.data.data;
+              res.data.data.forEach(item => {
+                item.oldName = item.name;
+                this.tool_data.push(item);
+              })
             })
             .catch(err => {
               console.log(err);
@@ -256,97 +332,158 @@
             name: '',
             initial_quantity: 0,
             unit_quantity: 1,
-            unit_count: 0
+            unit_count: 0,
+            unit: ''
           }
         },
-        editTools(idx) {
-          if (isNaN(idx)) {
-            let current_idx = this.tool_data.findIndex(item => item.name == idx.name)
-            this.tool_data[current_idx]['methods'] = 'edit';
-            this.tool_data[current_idx]['initial_quantity'] = +this.tool_data[current_idx]['initial_quantity']
-            this.tool_data[current_idx]['current_quantity'] = +this.tool_data[current_idx]['current_quantity']
-            axios.post('/tool_setting', this.tool_data[current_idx])
-              .then(res => {
-                console.log(res);
-                this.tool_data = res.data.data;
-                Swal.fire({
-                  icon: 'success',
-                  title: '修改成功',
-                  showConfirmButton: false,
-                  timer: 1500
-                });
-                this.search_input();
-              })
-              .catch(err => {
-                console.log(err);
-              })
-          } else {
+        // 
+        editTools(item) {
+          this.show_edit_modal = true;
+          console.log(item);
+          this.edit_data = {
+            name: item.name,
+            initial_quantity: item.initial_quantity,
+            unit_quantity: item.unit_quantity,
+            unit_count: Math.ceil(item.current_quantity / item.unit_quantity),
+            unit: item.unit
+          };
+        },
+        saveEditTools() {
+          const idx = this.tool_data.findIndex(item => item.name === this.edit_data.name);
+          if (idx !== -1) {
+            const oldName = this.tool_data[idx]['name'];
             this.tool_data[idx]['methods'] = 'edit';
-            this.tool_data[idx]['initial_quantity'] = +this.tool_data[idx]['initial_quantity']
-            this.tool_data[idx]['current_quantity'] = +this.tool_data[idx]['current_quantity']
+            this.tool_data[idx]['old_name'] = oldName;
+            this.tool_data[idx]['initial_quantity'] = +this.edit_data.initial_quantity;
+            this.tool_data[idx]['current_quantity'] = (+this.edit_data.unit_count * +this.edit_data.unit_quantity) - 1;
+            this.tool_data[idx]['unit_quantity'] = +this.edit_data.unit_quantity;
+            this.tool_data[idx]['unit'] = this.edit_data.unit;
+
             axios.post('/tool_setting', this.tool_data[idx])
-              .then(res => {
+              .then(async (res) => {
                 console.log(res);
                 this.tool_data = res.data.data;
+                const newName = this.tool_data[idx]['name'];
+                this.updateLocalStorage(oldName, newName);
                 Swal.fire({
                   icon: 'success',
                   title: '修改成功',
                   showConfirmButton: false,
                   timer: 1500
                 });
+                await this.getData();
+                this.search_input();
+                this.show_edit_modal = false;
               })
               .catch(err => {
                 console.log(err);
-              })
+              });
           }
+        },
+        updateLocalStorage(oldName, newName) {
+          // 更新 tempCarts
+          const tempCarts = JSON.parse(localStorage.getItem('tempCarts')) || [];
+          tempCarts.forEach(cart => {
+            if (cart.name === oldName) {
+              cart.name = newName;
+            }
+          });
+          localStorage.setItem('tempCarts', JSON.stringify(tempCarts));
+
+          // 更新 toolData
+          const toolData = JSON.parse(localStorage.getItem('toolData')) || [];
+          const toolIndex = toolData.findIndex(tool => tool.name === oldName);
+          if (toolIndex !== -1) {
+            toolData[toolIndex].name = newName;
+            localStorage.setItem('toolData', JSON.stringify(toolData));
+          }
+        },
+        deleteLocalStorage(name) {
+          // 刪除 tempCarts 中相關的數據
+          let tempCarts = JSON.parse(localStorage.getItem('tempCarts')) || [];
+          tempCarts = tempCarts.filter(item => item.name !== name);
+          localStorage.setItem('tempCarts', JSON.stringify(tempCarts));
+
+          // 刪除 toolData 中相關的數據
+          let toolData = JSON.parse(localStorage.getItem('toolData')) || [];
+          toolData = toolData.filter(item => item.name !== name);
+          localStorage.setItem('toolData', JSON.stringify(toolData));
         },
         deleteTools(idx) {
-
-          console.log(idx, !isNaN(idx))
+          console.log(idx, !isNaN(idx));
           if (isNaN(idx)) {
-            let current_idx = this.tool_data.findIndex(item => item.name == idx.name)
-            this.tool_data[current_idx]['methods'] = 'delete';
-            console.log(this.tool_data[current_idx]);
-            axios.post('/tool_setting', this.tool_data[current_idx])
-              .then(res => {
-                console.log(res);
-                this.tool_data = res.data.data;
-                Swal.fire({
-                  icon: 'success',
-                  title: '刪除成功',
-                  showConfirmButton: false,
-                  timer: 1500
-                });
-                this.search_input();
-              })
-              .catch(err => {
-                console.log(err);
-              })
+            let current_idx = this.tool_data.findIndex(item => item.name == idx.name);
+            Swal.fire({
+              title: `確定要刪除\n<${this.tool_data[current_idx]['name']}>嗎?`,
+              text: "刪除後將無法恢復!",
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#3085d6',
+              cancelButtonColor: '#d33',
+              confirmButtonText: '確定刪除',
+              cancelButtonText: '取消'
+            }).then((result) => {
+              if (result.isConfirmed) {
+                this.tool_data[current_idx]['methods'] = 'delete';
+                console.log(this.tool_data[current_idx]);
+                axios.post('/tool_setting', this.tool_data[current_idx])
+                  .then(async (res) => {
+                    console.log(res);
+                    this.tool_data = res.data.data;
+                    Swal.fire({
+                      icon: 'success',
+                      title: '刪除成功',
+                      showConfirmButton: false,
+                      timer: 1500
+                    });
+                    await this.getData();
+                    this.search_input();
+                    this.deleteLocalStorage(this.tool_data[current_idx]['name']);
+                  })
+                  .catch(err => {
+                    console.log(err);
+                  });
+              }
+            });
           } else {
-            this.tool_data[idx]['methods'] = 'delete';
-            console.log(this.tool_data[idx]);
-            axios.post('/tool_setting', this.tool_data[idx])
-              .then(res => {
-                console.log(res);
-                this.tool_data = res.data.data;
-                Swal.fire({
-                  icon: 'success',
-                  title: '刪除成功',
-                  showConfirmButton: false,
-                  timer: 1500
-                });
-              })
-              .catch(err => {
-                console.log(err);
-              })
+            Swal.fire({
+              title: `確定要刪除\n<${this.tool_data[idx]['name']}>嗎?`,
+              text: "刪除後將無法恢復!",
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#3085d6',
+              cancelButtonColor: '#d33',
+              confirmButtonText: '確定刪除',
+              cancelButtonText: '取消'
+            }).then((result) => {
+              if (result.isConfirmed) {
+                this.tool_data[idx]['methods'] = 'delete';
+                console.log(this.tool_data[idx]);
+                axios.post('/tool_setting', this.tool_data[idx])
+                  .then(async (res) => {
+                    console.log(res);
+                    this.tool_data = res.data.data;
+                    Swal.fire({
+                      icon: 'success',
+                      title: '刪除成功',
+                      showConfirmButton: false,
+                      timer: 1500
+                    });
+                    await this.getData();
+                    this.deleteLocalStorage(this.tool_data[idx]['name']);
+                  })
+                  .catch(err => {
+                    console.log(err);
+                  });
+              }
+            });
           }
         },
         search_input() {
-          console.log('in');
+          const search_arr = this.search_text.split('+');
           this.search_data = this.tool_data.filter(item => {
-            return item.name.includes(this.search_text);
-          })
-          console.log(this.search_data);
+            return search_arr.every(keyword => item.name.includes(keyword));
+          });
         },
         getRoundedQuantity(item) {
           if (item.unit_quantity == 1) {
@@ -359,11 +496,12 @@
             name: this.add_data.name,
             initial_quantity: +this.add_data.initial_quantity,
             unit_quantity: +this.add_data.unit_quantity,
-            current_quantity: (+this.add_data.unit_count * +this.add_data.unit_quantity) - 1
+            current_quantity: (+this.add_data.unit_count * +this.add_data.unit_quantity) - 1,
+            unit: this.add_data.unit
           }
           data['methods'] = 'create';
           axios.post('/tool_setting', data)
-            .then(res => {
+            .then(async (res) => {
               this.tool_data = res.data.data;
               this.hide_modal();
               Swal.fire({
@@ -372,6 +510,7 @@
                 showConfirmButton: false,
                 timer: 1500
               });
+              await this.getData();
             })
             .catch(err => {
               console.log(err);
@@ -381,8 +520,8 @@
       compilerOptions: {
         delimiters: ["[[", "]]"]
       },
-      created() {
-        this.getData();
+      async created() {
+        await this.getData();
       }
     })
     app.mount('#app');

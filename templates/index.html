@@ -4,7 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>器材管控</title>
+  <title>叫貨提示</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
   <style>
     h1 {
       text-align: center;
@@ -144,6 +146,7 @@
         }
       }
     }
+
     .set_surgeries_btn {
       background-color: rgb(56, 56, 193);
       padding: 3px 12px;
@@ -151,13 +154,14 @@
       cursor: pointer;
       font-size: 14px;
     }
+
     .set_surgeries_modal {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       width: 400px;
-      height: 200px;
+      height: 280px;
       background-color: #fff;
       box-shadow: 1px 0 4px rgba(0, 0, 0, 0.3);
       z-index: 1000001;
@@ -165,22 +169,28 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
+
       h2 {
         font-size: 20px;
         text-align: center;
         margin: 0;
       }
+
       div {
         display: flex;
         align-items: center;
         gap: 10px;
-        input, select {
+
+        input,
+        select {
           padding: 3px 8px;
         }
+
         input {
           width: 40px;
         }
       }
+
       .btn-group {
         display: flex;
         align-items: center;
@@ -189,6 +199,7 @@
         padding-bottom: 20px;
         margin-top: auto;
         margin-bottom: 0;
+
         a {
           text-decoration: none;
           display: block;
@@ -198,6 +209,7 @@
         }
       }
     }
+
     .mask {
       position: fixed;
       top: 0;
@@ -212,7 +224,7 @@
 
 <body style="background-color: #eee">
   <div id="app">
-    <h1>器材管控</h1>
+    <h1>叫貨提示</h1>
     <div class="tab-group">
       <a href="/">叫貨提示</a>
       <a href="/tool_page">器材設定</a>
@@ -241,16 +253,13 @@
             <p style="font-size: 14px;">需補貨: [[ item.need ]] [[ item.unit ]] </p>
             <div style="display: flex; align-items: center; gap: 8px;" v-if="item.add_tools > 0">
               <p style="font-size: 14px;">[[ item.add_date ]] 叫貨: [[ item.add_tools ]] [[ item.unit ]]</p>
-              <a @click="sub_tool(item)" v-if="item.status == 1"
-                style="display: block; background-color: #fff; color: #ccc; text-align: center; text-decoration: none; flex: 0 0 40px; font-size: 12px; color: rgb(41, 41, 220)"
-                href="javascript:;">減少 -</a>
             </div>
             <div v-for="writeData in item.writeOff_data" style="display: flex; align-items: center; gap: 8px;">
               <p style="font-size: 14px;">[[ writeData.write_date ]] 到貨: [[ writeData.write_count ]] [[ item.unit ]]</p>
             </div>
             <div class="btn-group" style="margin-top: auto; margin-bottom: 0;" v-if="item.status == 2">
               <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 40%; font-size: 14px;"
-                href="javascript:;" @click="writeOff(item)">核銷 (每單位)</a>
+                href="javascript:;" @click="writeOff(item)">核銷</a>
               <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 40%; font-size: 14px;"
                 href="javascript:;" @click="writeOff(item, true)">全部核銷</a>
             </div>
@@ -262,28 +271,34 @@
             <h2 style="font-size: 16px;">[[ item.name ]]</h2>
             <p style="font-size: 14px;">剩餘數量: [[ item.initial_quantity ]] 個</p>
             <p style="font-size: 14px;">需補貨: [[ item.need ]] [[ item.unit ]] </p>
-            <div style="display: flex; align-items: center; gap: 8px;" v-if="item.add_tools > 0">
-              <p style="font-size: 14px;">[[ item.add_date ]] 叫貨: [[ item.add_tools ]] [[ item.unit ]]</p>
-              <a @click="sub_tool(item)" v-if="item.status == 1"
-                style="display: block; background-color: #fff; color: #ccc; text-align: center; text-decoration: none; flex: 0 0 40px; font-size: 12px; color: rgb(41, 41, 220)"
-                href="javascript:;">減少 -</a>
+            <div style="display: flex; align-items: center; gap: 8px;"
+              v-if="item.add_tools > 0 || item.add_tools === ''">
+              <p style="font-size: 14px;">[[ item.add_date ]] 叫貨: </p>
+              <input type="number" v-model="item.add_tools" @blur="updateAddTools(item)" style="width: 50px;">
+              <p style="font-size: 14px;">[[ item.unit ]]</p>
             </div>
-            <div v-for="writeData in item.writeOff_data" style="display: flex; align-items: center; gap: 8px;">
-              <p style="font-size: 14px;">[[ writeData.write_date ]] 到貨: [[ writeData.write_count ]] [[ item.unit ]]</p>
-            </div>
-            <div class="btn-group" style="margin-top: auto; margin-bottom: 0;" v-if="item.status == 1">
+            <div class="bn-group" style="margin-top: auto; margin-bottom: 0;" v-if="item.status == 1">
               <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 30%;"
                 href="javascript:;" @click="add_tools(item)">叫貨</a>
-              <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 30%;"
-                href="javascript:;" @click="add_tools(item, true)">一次補齊</a>
             </div>
           </li>
         </template>
+
         <template v-for="(item, idx) in search_data">
           <li v-if="item.status == 0 && (show_status == 0 || show_status == 3)"
-            style="flex: 0 0 16%; background-color: rgb(118, 192, 126); box-shadow: 0 0 1px solid rgba(0,0,0,0.3); padding: 16px; color: #f1f1f1; margin-bottom: 30px; display: flex; flex-direction: column; min-height: 150px;">
+            style="flex: 0 0 16%; background-color: rgb(118, 192, 126); box-shadow: 0 0 1px solid rgba(0,0,0,0.3); padding: 16px; color: #f1f1f1; margin-bottom: 30px; display: flex; flex-direction: column; min-height: 250px;">
             <h2 style="font-size: 18px;">[[ item.name ]]</h2>
             <p>剩餘數量: [[item.initial_quantity]] 個</p>
+            <div style="display: flex; align-items: center; gap: 8px;"
+              v-if="item.add_tools > 0 || item.add_tools === ''">
+              <p style="font-size: 14px;">[[ item.add_date ]] 叫貨: </p>
+              <input type="number" v-model="item.add_tools" @blur="updateAddTools(item)" style="width: 50px;">
+              <p style="font-size: 14px;">[[ item.unit ]]</p>
+            </div>
+            <div class="btn-group" style="margin-top: auto; margin-bottom: 0;" v-if="item.status == 0">
+              <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 30%;"
+                href="javascript:;" @click="add_tools(item)">叫貨</a>
+            </div>
           </li>
         </template>
       </template>
@@ -296,16 +311,13 @@
             <p style="font-size: 14px;">需補貨: [[ item.need ]] [[ item.unit ]] </p>
             <div style="display: flex; align-items: center; gap: 8px;" v-if="item.add_tools > 0">
               <p style="font-size: 14px;">[[ item.add_date ]] 叫貨: [[ item.add_tools ]] [[ item.unit ]]</p>
-              <a @click="sub_tool(idx)" v-if="item.status == 1"
-                style="display: block; background-color: #fff; color: #ccc; text-align: center; text-decoration: none; flex: 0 0 40px; font-size: 12px; color: rgb(41, 41, 220)"
-                href="javascript:;">減少 -</a>
             </div>
             <div v-for="writeData in item.writeOff_data" style="display: flex; align-items: center; gap: 8px;">
               <p style="font-size: 14px;">[[ writeData.write_date ]] 到貨: [[ writeData.write_count ]] [[ item.unit ]]</p>
             </div>
             <div class="btn-group" style="margin-top: auto; margin-bottom: 0;" v-if="item.status == 2">
               <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 40%; font-size: 14px;"
-                href="javascript:;" @click="writeOff(idx)">核銷 (每單位)</a>
+                href="javascript:;" @click="writeOff(idx)">核銷</a>
               <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 40%; font-size: 14px;"
                 href="javascript:;" @click="writeOff(idx, true)">全部核銷</a>
             </div>
@@ -317,28 +329,33 @@
             <h2 style="font-size: 16px;">[[ item.name ]]</h2>
             <p style="font-size: 14px;">剩餘數量: [[ item.initial_quantity ]] 個</p>
             <p style="font-size: 14px;">需補貨: [[ item.need ]] [[ item.unit ]] </p>
-            <div style="display: flex; align-items: center; gap: 8px;" v-if="item.add_tools > 0">
-              <p style="font-size: 14px;">[[ item.add_date ]] 叫貨: [[ item.add_tools ]] [[ item.unit ]]</p>
-              <a @click="sub_tool(idx)" v-if="item.status == 1"
-                style="display: block; background-color: #fff; color: #ccc; text-align: center; text-decoration: none; flex: 0 0 40px; font-size: 12px; color: rgb(41, 41, 220)"
-                href="javascript:;">減少 -</a>
-            </div>
-            <div v-for="writeData in item.writeOff_data" style="display: flex; align-items: center; gap: 8px;">
-              <p style="font-size: 14px;">[[ writeData.write_date ]] 到貨: [[ writeData.write_count ]] [[ item.unit ]]</p>
+            <div style="display: flex; align-items: center; gap: 8px;"
+              v-if="item.add_tools > 0 || item.add_tools === ''">
+              <p style="font-size: 14px;">[[ item.add_date ]] 叫貨: </p>
+              <input type="number" v-model="item.add_tools" @blur="updateAddTools(item)" style="width: 50px;">
+              <p style="font-size: 14px;">[[ item.unit ]]</p>
             </div>
             <div class="btn-group" style="margin-top: auto; margin-bottom: 0;" v-if="item.status == 1">
               <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 30%;"
                 href="javascript:;" @click="add_tools(idx)">叫貨</a>
-              <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 30%;"
-                href="javascript:;" @click="add_tools(idx, true)">一次補齊</a>
             </div>
           </li>
         </template>
-        <template v-for="item in tool_data">
+        <template v-for="(item, idx) in tool_data">
           <li v-if="item.status == 0 && (show_status == 0 || show_status == 3)"
-            style="flex: 0 0 16%; background-color: rgb(118, 192, 126); box-shadow: 0 0 1px solid rgba(0,0,0,0.3); padding: 16px; color: #f1f1f1; margin-bottom: 30px; display: flex; flex-direction: column; min-height: 150px;">
+            style="flex: 0 0 16%; background-color: rgb(118, 192, 126); box-shadow: 0 0 1px solid rgba(0,0,0,0.3); padding: 16px; color: #f1f1f1; margin-bottom: 30px; display: flex; flex-direction: column; min-height: 250px;">
             <h2 style="font-size: 18px;">[[ item.name ]]</h2>
             <p>剩餘數量: [[item.initial_quantity]] 個</p>
+            <div style="display: flex; align-items: center; gap: 8px;"
+              v-if="item.add_tools > 0 || item.add_tools === ''">
+              <p style="font-size: 14px;">[[ item.add_date ]] 叫貨: </p>
+              <input type="number" v-model="item.add_tools" @blur="updateAddTools(item)" style="width: 50px;">
+              <p style="font-size: 14px;">[[ item.unit ]]</p>
+            </div>
+            <div class="btn-group" style="margin-top: auto; margin-bottom: 0;" v-if="item.status == 0">
+              <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 30%;"
+                href="javascript:;" @click="add_tools(idx)">叫貨</a>
+            </div>
           </li>
         </template>
       </template>
@@ -367,9 +384,13 @@
     <div class="set_surgeries_modal" v-if="surgeries_model">
       <h2>手術扣存</h2>
       <div>
+        <label for="surgeries_id">手術搜尋</label>
+        <input type="text" v-model="search_surgeries_text" @input="search_surgeries">
+      </div>
+      <div>
         <label for="surgeries_id">手術選擇</label>
         <select name="surgeries_id" id="surgeries_id" v-model="temp_surgeries.name">
-          <option v-for="item in surgeries" :value="item.name">[[ item.name ]]</option>
+          <option v-for="item in filtered_surgeries" :value="item.name">[[ item.name ]]</option>
         </select>
       </div>
       <div>
@@ -397,6 +418,8 @@
           search_text: "",
           surgeries_model: false,
           surgeries: [],
+          search_surgeries_text: "",
+          filtered_surgeries: [],
           temp_surgeries: {
             name: "",
             count: 1
@@ -415,18 +438,29 @@
         async deduct_tools() {
           console.log(this.temp_surgeries);
           axios.post('/operation_sub_tools', this.temp_surgeries)
-              .then(async (res) => {
-                this.surgeries_model = false;
-                this.temp_surgeries = {
-                  name: "",
-                  count: 1
-                }
-                await this.getData();
-                this.search_input();
-              })
-              .catch(err => {
-                console.log('Error confirming order', err);
-              });
+            .then(async (res) => {
+              this.surgeries_model = false;
+              this.temp_surgeries = {
+                name: "",
+                count: 1
+              }
+              this.search_surgeries_text = "";
+              await this.getData();
+              this.search_input();
+            })
+            .catch(err => {
+              console.log('Error confirming order', err);
+            });
+        },
+        search_surgeries() {
+          if (this.search_surgeries_text.trim() === '') {
+            this.filtered_surgeries = this.surgeries;
+          } else {
+            this.filtered_surgeries = this.surgeries.filter(item => {
+              return item.name.includes(this.search_surgeries_text.trim());
+            });
+            console.log(this.filtered_surgeries);
+          }
         },
         async getData() {
           await axios.get('/getData')
@@ -463,12 +497,13 @@
             });
         },
         add_tools(idx, all = false) {
+          console.log(isNaN(idx))
           if (isNaN(idx)) {
             let current_idx = this.tool_data.findIndex(item => item.name == idx.name);
-            if (all) {
-              this.tool_data[current_idx]['add_tools'] = this.tool_data[current_idx]['need'];
+            if (this.tool_data[current_idx]['add_tools'] == undefined) {
+              this.tool_data[current_idx]['add_tools'] = 1;
             } else {
-              this.tool_data[current_idx]['add_tools'] += 1;
+              this.tool_data[current_idx]['add_tools'] = this.tool_data[current_idx]['add_tools'] + 1
             }
             this.tool_data[current_idx]['add_date'] = this.getCurrentDate();
             let flag = true;
@@ -482,10 +517,11 @@
               this.temp_carts.push(this.tool_data[current_idx]);
             }
           } else {
-            if (all) {
-              this.tool_data[idx]['add_tools'] = this.tool_data[idx]['need'];
+            console.log(this.tool_data[idx]['add_tools'])
+            if (this.tool_data[idx]['add_tools'] == undefined) {
+              this.tool_data[idx]['add_tools'] = 1;
             } else {
-              this.tool_data[idx]['add_tools'] += 1;
+              this.tool_data[idx]['add_tools'] = this.tool_data[idx]['add_tools'] + 1
             }
             this.tool_data[idx]['add_date'] = this.getCurrentDate();
             let flag = true;
@@ -503,6 +539,28 @@
           const toolDataToStore = this.tool_data.filter(item => item.add_tools > 0);
           localStorage.setItem('toolData', JSON.stringify(toolDataToStore));
           localStorage.setItem('tempCarts', JSON.stringify(this.temp_carts));
+        },
+
+        updateAddTools(item) {
+          if (item.add_tools !== '') {
+            let current_idx = this.tool_data.findIndex(i => i.name == item.name);
+            let temp_idx = null;
+            this.temp_carts.forEach((cartItem, idx) => {
+              if (cartItem.name == item.name) {
+                if (item.add_tools == 0) {
+                  temp_idx = idx;
+                }
+                cartItem.add_tools = item.add_tools;
+              }
+            });
+            if (temp_idx != null) {
+              this.temp_carts.splice(temp_idx, 1);
+            }
+            // 將叫貨資訊和購物車內容儲存到 localStorage
+            const toolDataToStore = this.tool_data.filter(item => item.add_tools > 0);
+            localStorage.setItem('toolData', JSON.stringify(toolDataToStore));
+            localStorage.setItem('tempCarts', JSON.stringify(this.temp_carts));
+          }
         },
         sub_tool(idx) {
           if (isNaN(idx)) {
@@ -526,138 +584,119 @@
           localStorage.setItem('toolData', JSON.stringify(toolDataToStore));
           localStorage.setItem('tempCarts', JSON.stringify(this.temp_carts));
         },
-        writeOff(idx, all = false) {
+        async writeOff(idx, all = false) {
           let date = this.getCurrentDate();
+          let current_idx;
+          let add_tools;
+
           if (isNaN(idx)) {
-            let current_idx = this.tool_data.findIndex(item => item.name == idx.name);
-            if (this.tool_data[current_idx]['writeOff_data'] == undefined) {
-              this.tool_data[current_idx]['writeOff_data'] = [];
-              if (all) {
-                this.tool_data[current_idx]['writeOff_data'].push(
-                  {
-                    "write_date": date,
-                    "write_count": this.tool_data[current_idx]['add_tools']
-                  }
-                );
-              } else {
-                this.tool_data[current_idx]['writeOff_data'].push(
-                  {
-                    "write_date": date,
-                    "write_count": 1
-                  }
-                );
-              }
-            } else {
-              let flag = true;
-              let total_count = 0;
-              this.tool_data[current_idx]['writeOff_data'].forEach(item => {
-                total_count += item.write_count;
-              });
-              this.tool_data[current_idx]['writeOff_data'].forEach(item => {
-                if (item.write_date == date) {
-                  if (all) {
-                    item.write_count += (this.tool_data[current_idx]['add_tools'] - total_count);
-                    flag = false;
-                  } else {
-                    item.write_count += 1;
-                    flag = false;
-                  }
-                }
-              });
-              if (flag) {
-                if (all) {
-                  this.tool_data[current_idx]['writeOff_data'].push(
-                    {
-                      "write_date": date,
-                      "write_count": this.tool_data[current_idx]['add_tools']
-                    }
-                  );
-                } else {
-                  this.tool_data[current_idx]['writeOff_data'].push(
-                    {
-                      "write_date": date,
-                      "write_count": 1
-                    }
-                  );
-                }
-              }
-            }
-            console.log(this.tool_data[current_idx]);
-            axios.post('/write_off', this.tool_data[current_idx])
-              .then(async (res) => {
-                console.log('Order confirmed', res);
-                if (res.data.status == 'success') {
-                  await this.getData();
-                  this.search_input();
-                }
-              })
-              .catch(err => {
-                console.log('Error confirming order', err);
-              });
+            current_idx = this.tool_data.findIndex(item => item.name == idx.name);
+            add_tools = parseInt(this.tool_data[current_idx]['add_tools']);
           } else {
-            if (this.tool_data[idx]['writeOff_data'] == undefined) {
-              this.tool_data[idx]['writeOff_data'] = [];
-              if (all) {
-                this.tool_data[idx]['writeOff_data'].push(
-                  {
-                    "write_date": date,
-                    "write_count": this.tool_data[idx]['add_tools']
-                  }
-                );
-              } else {
-                this.tool_data[idx]['writeOff_data'].push(
-                  {
-                    "write_date": date,
-                    "write_count": 1
-                  }
-                );
+            current_idx = idx;
+            add_tools = parseInt(this.tool_data[idx]['add_tools']);
+          }
+
+          if (all) {
+            // 計算已經核銷的數量
+            let writtenOffCount = 0;
+            if (this.tool_data[current_idx]['writeOff_data']) {
+              this.tool_data[current_idx]['writeOff_data'].forEach(item => {
+                writtenOffCount += parseInt(item.write_count);
+              });
+            }
+
+            // 計算剩餘需要核銷的數量
+            const remainingCount = add_tools - writtenOffCount;
+
+            if (remainingCount > 0) {
+              // 全部核銷
+              const result = await Swal.fire({
+                title: '確認核銷',
+                text: `您確定要核銷剩餘的 ${remainingCount} 個 ${this.tool_data[current_idx].name} 嗎?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '確定',
+                cancelButtonText: '取消'
+              });
+
+              if (result.isConfirmed) {
+                this.processWriteOff(current_idx, remainingCount, date);
               }
             } else {
-              let flag = true;
-              let total_count = 0;
-              this.tool_data[idx]['writeOff_data'].forEach(item => {
-                total_count += item.write_count;
-              });
-              this.tool_data[idx]['writeOff_data'].forEach(item => {
-                if (item.write_date == date) {
-                  if (all) {
-                    item.write_count += (this.tool_data[idx]['add_tools'] - total_count);
-                    flag = false;
-                  } else {
-                    item.write_count += 1;
-                    flag = false;
-                  }
+              Swal.fire('全部已核銷', `${this.tool_data[current_idx].name} 已全部核銷完畢`, 'info');
+            }
+          } else {
+            // 一般核銷
+            const { value: writeOffCount } = await Swal.fire({
+              title: '輸入核銷數量',
+              input: 'number',
+              inputLabel: `請輸入 ${this.tool_data[current_idx].name} 的核銷數量`,
+              inputValue: 1,
+              inputAttributes: {
+                min: 1,
+                max: add_tools,
+                step: 1,
+                style: 'text-align: center; margin: 10px auto; width: 50%;'
+              },
+              showCancelButton: true,
+              confirmButtonText: '送出',
+              cancelButtonText: '取消',
+              inputValidator: (value) => {
+                if (!value) {
+                  return '請輸入核銷數量';
                 }
-              });
-              if (flag) {
-                if (all) {
-                  this.tool_data[idx]['writeOff_data'].push(
-                    {
-                      "write_date": date,
-                      "write_count": this.tool_data[idx]['add_tools']
-                    }
-                  );
-                } else {
-                  this.tool_data[idx]['writeOff_data'].push(
-                    {
-                      "write_date": date,
-                      "write_count": 1
-                    }
-                  );
+                if (parseInt(value) < 1 || parseInt(value) > add_tools) {
+                  return `核銷數量必須介於1到${add_tools}之間`;
                 }
               }
+            });
+
+            if (writeOffCount) {
+              this.processWriteOff(current_idx, parseInt(writeOffCount), date);
             }
-            axios.post('/write_off', this.tool_data[idx])
-              .then(res => {
-                console.log('Order confirmed', res);
-                if (res.data.status == 'success') {
-                  this.getData();
-                }
-              })
-              .catch(err => {
-                console.log('Error confirming order', err);
-              });
           }
+        },
+        processWriteOff(idx, writeOffCount, date) {
+          if (this.tool_data[idx]['writeOff_data'] == undefined) {
+            this.tool_data[idx]['writeOff_data'] = [];
+            this.tool_data[idx]['writeOff_data'].push(
+              {
+                "write_date": date,
+                "write_count": writeOffCount
+              }
+            );
+          } else {
+            let flag = true;
+            this.tool_data[idx]['writeOff_data'].forEach(item => {
+              if (item.write_date == date) {
+                item.write_count += writeOffCount;
+                flag = false;
+              }
+            });
+            if (flag) {
+              this.tool_data[idx]['writeOff_data'].push(
+                {
+                  "write_date": date,
+                  "write_count": writeOffCount
+                }
+              );
+            }
+          }
+
+          axios.post('/write_off', this.tool_data[idx])
+            .then(async (res) => {
+              console.log('Order confirmed', res);
+              if (res.data.status == 'success') {
+                await this.getData();
+                this.search_input();
+                Swal.fire('核銷成功', '', 'success');
+              }
+            })
+            .catch(err => {
+              console.log('Error confirming order', err);
+              Swal.fire('核銷失敗', '', 'error');
+            });
         },
         getCurrentDate() {
           const now = new Date();
@@ -670,13 +709,26 @@
           axios.post('/comfrim_order', this.temp_carts)
             .then(async (res) => {
               console.log('Order confirmed', res);
+              let data = '@黃盟正  您好我們要叫貨\n';
+              this.temp_carts.forEach(item => {
+                data += `${item.name}${item.add_tools}${item.unit}\n`
+              })
               if (res.data.status == 'success') {
-                this.temp_carts = [];
-                // 清空 localStorage 中的叫貨資訊和購物車內容
-                localStorage.removeItem('toolData');
-                localStorage.removeItem('tempCarts');
-                await this.getData();
-                this.search_input();
+                axios.post('/send_message', {
+                  message: '\n' + data
+                })
+                .then(async(response) => {
+                  console.log('Line Notify sent:', response.data);
+                  this.temp_carts = [];
+                  // 清空 localStorage 中的叫貨資訊和購物車內容
+                  localStorage.removeItem('toolData');
+                  localStorage.removeItem('tempCarts');
+                  await this.getData();
+                  this.search_input();
+                })
+                .catch(error => {
+                  console.error('Error sending Line Notify:', error);
+                });
               }
             })
             .catch(err => {
@@ -684,8 +736,9 @@
             });
         },
         search_input() {
+          const search_arr = this.search_text.split('+');
           this.search_data = this.tool_data.filter(item => {
-            return item.name.includes(this.search_text);
+            return search_arr.every(keyword => item.name.includes(keyword));
           });
           console.log(this.search_data);
         }
@@ -696,6 +749,7 @@
       async created() {
         this.getData();
         await this.get_operations();
+        this.filtered_surgeries = this.surgeries;
       }
     });
     app.mount('#app');
