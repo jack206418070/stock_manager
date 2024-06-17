@@ -554,8 +554,9 @@ dbs = client.tools
 #     "unit_quantity": 1
 #   }
 # ]
+# print(len(temp_data))
 # for doc in temp_data:
-#   dbs.test.insert_one(doc)
+#   dbs.appliance.insert_one(doc)
 
 
 @app.before_request
@@ -760,4 +761,4 @@ def operation_sub_tools():
   
 
 if __name__ == '__main__':
-  app.run(port=5088, debug=True)
+  app.run(port=5088)
