@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>手術設定</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <style>
+    h1 {
+      text-align: center;
+    }
+
+    .tab-group {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .tab-group a {
+      text-decoration: none;
+    }
+
+    .tab-block {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .tab-block a {
+      display: block;
+      padding: 3px 12px;
+      text-align: center;
+      color: #fff;
+      background-color: rgb(59, 59, 197);
+      text-decoration: none;
+    }
+
+    .add-modal,
+    .instrument-modal {
+      position: fixed;
+      width: 80%;
+      height: 90vh;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10000;
+      padding: 16px;
+      background-color: #fff;
+      box-shadow: 1px 0 4px rgba(0, 0, 0, .3);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .add-modal {
+      width: 300px;
+      height: 150px;
+
+      input {
+        padding: 2px 4px;
+        font-size: 14px;
+      }
+    }
+
+    .instrument-modal {
+      width: 40%;
+      height: 75vh;
+
+      h2 {
+        margin: 0;
+        margin-bottom: 20px;
+      }
+    }
+
+    .add-modal h2,
+    .instrument-modal h2 {
+      text-align: center;
+      font-size: 18px;
+    }
+
+    .btn-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-top: auto;
+    }
+
+    .btn-group a {
+      text-decoration: none;
+      background-color: rgb(109, 109, 222);
+      color: #fff;
+      padding: 5px 15px;
+    }
+
+    .surgery-list {
+      margin-top: 20px;
+    }
+
+    .surgery-item {
+      cursor: pointer;
+      padding: 5px;
+      border: 1px solid #ddd;
+      margin-bottom: 5px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .surgery-item button {
+      margin-left: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" v-cloak>
+    <h1>手術消耗設定</h1>
+    <div class="tab-group">
+      <a href="/">叫貨提示</a>
+      <a href="/tool_page">器材設定</a>
+      <a href="/operation_page">手術消耗設定</a>
+    </div>
+    <div class="tab-block">
+      <a href="javascript:;" @click="show_add = true">新增手術</a>
+    </div>
+    <div class="add-modal" v-if="show_add">
+      <h2>新增手術</h2>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+        <label for="surgery-name">手術名稱:</label>
+        <input v-model="newSurgery.name" id="surgery-name" type="text">
+      </div>
+      <div class="btn-group">
+        <a href="javascript:;" @click="show_add = false">取消</a>
+        <a href="javascript:;" @click="addSurgery">新增手術</a>
+      </div>
+    </div>
+
+    <div class="instrument-modal" v-if="show_instrument_modal">
+      <h2>[[ editIndex === null ? '新增手術器具' : '編輯手術器具' ]]</h2>
+      <div v-if="currentSurgery">
+        <h2>當前手術: [[ currentSurgery.name ]]</h2>
+        <div>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;"
+            v-if="editIndex === null">
+            <label for="instrument-search">搜尋器具:</label>
+            <input v-model="instrumentSearch" id="instrument-search" type="text" v-if="editIndex === null">
+          </div>
+          <div v-if="editIndex === null" style="margin-bottom: 10px; display: flex;
+          align-items: center; justify-content: center; gap: 10px;">
+            <label for="instrument-select">選擇器具:</label>
+            <select v-model="selectedInstrument" id="instrument-select" style="padding: 3px 8px;">
+              <option v-for="instrument in filteredInstruments" :key="instrument.id" :value="instrument">[[
+                instrument.name ]]</option>
+            </select>
+          </div>
+          <div v-else style="display: flex; align-items: center; justify-content: center; margin-bottom: 15px">
+            正在編輯: [[ selectedInstrument.name ]]
+          </div>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
+            <label for="instrument-quantity">數量:</label>
+            <input v-model.number="instrumentQuantity" id="instrument-quantity" type="number" min="1">
+            <button @click="addInstrument">[[ editIndex === null ? '新增器具' : '更新器具' ]]</button>
+            <button v-if="editIndex !== null" @click="resetForm">取消編輯</button>
+          </div>
+        </div>
+        <h3>已選擇的器具:</h3>
+        <ul style="height: 350px; overflow-y: scroll; list-style: dotted; padding-left: 10px;">
+          <li v-for="(instrument, index) in currentSurgery.instruments" :key="index" style="display: flex; align-items: center; gap: 15px; margin-bottom: 8px;">
+            <div>
+              [[ instrument.name ]] - [[ instrument.quantity ]]個
+            </div>
+            <div>
+              <button @click="editInstrument(index)" style="margin-right: 5px;">編輯</button>
+              <button @click="removeInstrument(index)">移除</button>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="btn-group">
+        <a href="javascript:;" @click="closeInstrumentModal">取消</a>
+      </div>
+    </div>
+
+    <div class="surgery-list">
+      <h2>所有手術</h2>
+      <div v-for="(surgery, index) in surgeries" :key="index" class="surgery-item">
+        [[ surgery.name ]]
+        <div>
+          <button @click.stop="openInstrumentModal(index)">新增/編輯器具</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/vue@3.4.5/dist/vue.global.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js"></script>
+  <script>
+    const app = Vue.createApp({
+      delimiters: ['[[', ']]'],
+      data() {
+        return {
+          show_add: false,
+          show_instrument_modal: false,
+          newSurgery: {
+            name: ''
+          },
+          surgeries: [],
+          currentSurgery: null,
+          instruments: [],
+          selectedInstrument: null,
+          instrumentQuantity: 1,
+          editIndex: null,
+          instrumentSearch: ''
+        }
+      },
+      computed: {
+        availableInstruments() {
+          if (!this.currentSurgery) return this.instruments;
+          return this.instruments.filter(instrument =>
+            !this.currentSurgery.instruments.find(i => i.id === instrument.id)
+          );
+        },
+        filteredInstruments() {
+          return this.availableInstruments.filter(instrument =>
+            instrument.name.includes(this.instrumentSearch)
+          );
+        }
+      },
+      methods: {
+        async addSurgery() {
+          if (this.newSurgery.name) {
+            try {
+              const response = await axios.post('/create_operation', this.newSurgery);
+              await this.get_operations(); // 重新抓取手術資料
+              this.newSurgery.name = '';
+              this.show_add = false;
+            } catch (error) {
+              console.error('新增手術時發生錯誤:', error);
+            }
+          }
+        },
+        selectSurgery(index) {
+          this.currentSurgery = this.surgeries[index];
+          this.resetForm();
+        },
+        async addInstrument() {
+          if (this.selectedInstrument && this.instrumentQuantity > 0) {
+            const instrument = {
+              id: this.selectedInstrument.id,
+              name: this.selectedInstrument.name,
+              quantity: this.instrumentQuantity
+            };
+            if (this.editIndex === null) {
+              // 新增器具
+              this.currentSurgery.instruments.push({
+                ...this.selectedInstrument,
+                quantity: this.instrumentQuantity
+              });
+            } else {
+              // 編輯器具
+              this.currentSurgery.instruments[this.editIndex] = {
+                ...this.selectedInstrument,
+                quantity: this.instrumentQuantity
+              };
+            }
+            console.log([instrument])
+            try {
+              const response = await axios.post('/operation_setting', {
+                name: this.currentSurgery.name,
+                instruments: this.currentSurgery.instruments
+              });
+              await this.get_operations(); // 重新抓取手術資料
+              this.resetForm();
+            } catch (error) {
+              console.error('設定手術器材時發生錯誤:', error);
+            }
+          }
+        },
+        async removeInstrument(index) {
+          this.currentSurgery.instruments.splice(index, 1);
+          try {
+            const response = await axios.post('/operation_setting', {
+              name: this.currentSurgery.name,
+              instruments: this.currentSurgery.instruments.map(instrument => ({
+                id: instrument.id,
+                name: instrument.name,
+                quantity: instrument.quantity
+              }))
+            });
+            await this.get_operations(); // 重新抓取手術資料
+          } catch (error) {
+            console.error('移除手術器材時發生錯誤:', error);
+          }
+        },
+        editInstrument(index) {
+          let instrument = this.currentSurgery.instruments[index];
+          this.selectedInstrument = this.instruments.find(i => i.id === instrument.id);
+          this.instrumentQuantity = instrument.quantity;
+          this.editIndex = index;
+          this.show_instrument_modal = true;
+        },
+        resetForm() {
+          this.selectedInstrument = null;
+          this.instrumentQuantity = 1;
+          this.editIndex = null;
+          this.instrumentSearch = '';
+        },
+        async get_toolName() {
+          try {
+            const response = await axios.get('/get_toolName');
+            this.instruments = response.data.data;
+          } catch (error) {
+            console.error('取得器材名稱時發生錯誤:', error);
+          }
+        },
+        openInstrumentModal(index) {
+          this.selectSurgery(index);
+          this.show_instrument_modal = true;
+        },
+        closeInstrumentModal() {
+          this.show_instrument_modal = false;
+          this.resetForm();
+        },
+        async get_operations() {
+          try {
+            const response = await axios.get('/get_operation');
+            this.surgeries = response.data.data;
+          } catch (error) {
+            console.error('取得手術列表時發生錯誤:', error);
+          }
+        }
+      },
+      async mounted() {
+        await this.get_toolName();
+        await this.get_operations();
+      }
+    });
+    app.mount('#app');
+  </script>
+</body>
+
+</html>

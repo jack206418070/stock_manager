@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>器材管控</title>
+  <style>
+    h1 {
+      text-align: center;
+    }
+
+    .tab-group {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: center;
+
+      a {
+        text-decoration: none;
+      }
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .styled-table th,
+    .styled-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+
+    .styled-table th {
+      background-color: #f2f2f2;
+      text-align: left;
+    }
+
+    .styled-table tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .styled-table tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .styled-table th:first-child,
+    .styled-table td:first-child {
+      width: 40%;
+    }
+
+    .carts {
+      position: fixed;
+      height: 600px;
+      overflow-y: scroll;
+      width: 400px;
+      background-color: #fff;
+      box-shadow: 1px 0 3px rgba(0, 0, 0, 0.3);
+      right: 20px;
+      top: 0;
+      bottom: 0;
+      margin: auto;
+
+      h4 {
+        text-align: center;
+        margin: 10px 0;
+      }
+
+      .desc {
+        padding: 5px;
+      }
+    }
+
+    .cart-icon {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      border-radius: 50%;
+      height: 40px;
+      width: 40px;
+      background-color: rgb(225, 98, 98);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+
+      span {
+        padding-top: 5px;
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .send_product {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      font-size: 14px;
+      padding: 5px 10px;
+      text-align: center;
+      background-color: rgb(67, 67, 212);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .btn-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .filter-tab {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-left: 40px;
+
+      a {
+        display: block;
+        padding: 5px 12px;
+        text-align: center;
+        text-decoration: none;
+        font-size: 14px;
+        background-color: #ddd;
+        color: #333;
+        transition: .3s;
+
+        &.active {
+          background-color: rgb(56, 56, 193);
+          color: #fff;
+        }
+
+        &:hover {
+          background-color: rgb(56, 56, 193);
+          color: #fff;
+        }
+      }
+    }
+    .set_surgeries_btn {
+      background-color: rgb(56, 56, 193);
+      padding: 3px 12px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .set_surgeries_modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px;
+      height: 200px;
+      background-color: #fff;
+      box-shadow: 1px 0 4px rgba(0, 0, 0, 0.3);
+      z-index: 1000001;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      h2 {
+        font-size: 20px;
+        text-align: center;
+        margin: 0;
+      }
+      div {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        input, select {
+          padding: 3px 8px;
+        }
+        input {
+          width: 40px;
+        }
+      }
+      .btn-group {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        padding-bottom: 20px;
+        margin-top: auto;
+        margin-bottom: 0;
+        a {
+          text-decoration: none;
+          display: block;
+          background-color: rgb(99, 99, 228);
+          padding: 3px 10px;
+          color: #fff;
+        }
+      }
+    }
+    .mask {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.3);
+      z-index: 1000000;
+    }
+  </style>
+</head>
+
+<body style="background-color: #eee">
+  <div id="app">
+    <h1>器材管控</h1>
+    <div class="tab-group">
+      <a href="/">叫貨提示</a>
+      <a href="/tool_page">器材設定</a>
+      <!-- <a href="javascript:;">廠商設定</a> -->
+      <a href="/operation_page">手術消耗設定</a>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; padding-right: 40px">
+      <div class="filter-tab">
+        <p>篩選:</p>
+        <a href="javascript:;" @click="show_status = 0" :class="{'active': show_status == 0}">顯示全部</a>
+        <a href="javascript:;" @click="show_status = 2" :class="{'active': show_status == 2}">待核銷</a>
+        <a href="javascript:;" @click="show_status = 1" :class="{'active': show_status == 1}">待補貨</a>
+        <a href="javascript:;" @click="show_status = 3" :class="{'active': show_status == 3}">不需補貨</a>
+        <p>搜尋:</p>
+        <input type="text" v-model="search_text" @input="search_input">
+      </div>
+      <div class="set_surgeries_btn" @click="surgeries_model = true">手術扣存</div>
+    </div>
+    <ul style="display: flex; align-items: center; gap: 10px; list-style: none; flex-wrap: wrap;">
+      <template v-if="search_data.length > 0">
+        <template v-for="(item, idx) in search_data">
+          <li v-if="item.status == 2 && (show_status == 0 || show_status == 2)"
+            style="flex: 0 0 16%; background-color: rgb(70, 163, 229); box-shadow: 0 0 1px solid rgba(0,0,0,0.3); padding: 16px; color: #f1f1f1; margin-bottom: 30px; min-height: 350px; display: flex; flex-direction: column;">
+            <h2 style="font-size: 16px;">[[ item.name ]]</h2>
+            <p style="font-size: 14px;">剩餘數量: [[ item.initial_quantity ]] 個</p>
+            <p style="font-size: 14px;">需補貨: [[ item.need ]] [[ item.unit ]] </p>
+            <div style="display: flex; align-items: center; gap: 8px;" v-if="item.add_tools > 0">
+              <p style="font-size: 14px;">[[ item.add_date ]] 叫貨: [[ item.add_tools ]] [[ item.unit ]]</p>
+              <a @click="sub_tool(item)" v-if="item.status == 1"
+                style="display: block; background-color: #fff; color: #ccc; text-align: center; text-decoration: none; flex: 0 0 40px; font-size: 12px; color: rgb(41, 41, 220)"
+                href="javascript:;">減少 -</a>
+            </div>
+            <div v-for="writeData in item.writeOff_data" style="display: flex; align-items: center; gap: 8px;">
+              <p style="font-size: 14px;">[[ writeData.write_date ]] 到貨: [[ writeData.write_count ]] [[ item.unit ]]</p>
+            </div>
+            <div class="btn-group" style="margin-top: auto; margin-bottom: 0;" v-if="item.status == 2">
+              <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 40%; font-size: 14px;"
+                href="javascript:;" @click="writeOff(item)">核銷 (每單位)</a>
+              <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 40%; font-size: 14px;"
+                href="javascript:;" @click="writeOff(item, true)">全部核銷</a>
+            </div>
+          </li>
+        </template>
+        <template v-for="(item, idx) in search_data">
+          <li v-if="item.status == 1 && (show_status == 0 || show_status == 1)"
+            style="flex: 0 0 16%; background-color: rgb(226, 138, 115); box-shadow: 0 0 1px solid rgba(0,0,0,0.3); padding: 16px; color: #f1f1f1; margin-bottom: 30px; min-height: 350px; display: flex; flex-direction: column;">
+            <h2 style="font-size: 16px;">[[ item.name ]]</h2>
+            <p style="font-size: 14px;">剩餘數量: [[ item.initial_quantity ]] 個</p>
+            <p style="font-size: 14px;">需補貨: [[ item.need ]] [[ item.unit ]] </p>
+            <div style="display: flex; align-items: center; gap: 8px;" v-if="item.add_tools > 0">
+              <p style="font-size: 14px;">[[ item.add_date ]] 叫貨: [[ item.add_tools ]] [[ item.unit ]]</p>
+              <a @click="sub_tool(item)" v-if="item.status == 1"
+                style="display: block; background-color: #fff; color: #ccc; text-align: center; text-decoration: none; flex: 0 0 40px; font-size: 12px; color: rgb(41, 41, 220)"
+                href="javascript:;">減少 -</a>
+            </div>
+            <div v-for="writeData in item.writeOff_data" style="display: flex; align-items: center; gap: 8px;">
+              <p style="font-size: 14px;">[[ writeData.write_date ]] 到貨: [[ writeData.write_count ]] [[ item.unit ]]</p>
+            </div>
+            <div class="btn-group" style="margin-top: auto; margin-bottom: 0;" v-if="item.status == 1">
+              <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 30%;"
+                href="javascript:;" @click="add_tools(item)">叫貨</a>
+              <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 30%;"
+                href="javascript:;" @click="add_tools(item, true)">一次補齊</a>
+            </div>
+          </li>
+        </template>
+        <template v-for="(item, idx) in search_data">
+          <li v-if="item.status == 0 && (show_status == 0 || show_status == 3)"
+            style="flex: 0 0 16%; background-color: rgb(118, 192, 126); box-shadow: 0 0 1px solid rgba(0,0,0,0.3); padding: 16px; color: #f1f1f1; margin-bottom: 30px; display: flex; flex-direction: column; min-height: 150px;">
+            <h2 style="font-size: 18px;">[[ item.name ]]</h2>
+            <p>剩餘數量: [[item.initial_quantity]] 個</p>
+          </li>
+        </template>
+      </template>
+      <template v-if="search_data.length == 0">
+        <template v-for="(item, idx) in tool_data">
+          <li v-if="item.status == 2 && (show_status == 0 || show_status == 2)"
+            style="flex: 0 0 16%; background-color: rgb(70, 163, 229); box-shadow: 0 0 1px solid rgba(0,0,0,0.3); padding: 16px; color: #f1f1f1; margin-bottom: 30px; min-height: 350px; display: flex; flex-direction: column;">
+            <h2 style="font-size: 16px;">[[ item.name ]]</h2>
+            <p style="font-size: 14px;">剩餘數量: [[ item.initial_quantity ]] 個</p>
+            <p style="font-size: 14px;">需補貨: [[ item.need ]] [[ item.unit ]] </p>
+            <div style="display: flex; align-items: center; gap: 8px;" v-if="item.add_tools > 0">
+              <p style="font-size: 14px;">[[ item.add_date ]] 叫貨: [[ item.add_tools ]] [[ item.unit ]]</p>
+              <a @click="sub_tool(idx)" v-if="item.status == 1"
+                style="display: block; background-color: #fff; color: #ccc; text-align: center; text-decoration: none; flex: 0 0 40px; font-size: 12px; color: rgb(41, 41, 220)"
+                href="javascript:;">減少 -</a>
+            </div>
+            <div v-for="writeData in item.writeOff_data" style="display: flex; align-items: center; gap: 8px;">
+              <p style="font-size: 14px;">[[ writeData.write_date ]] 到貨: [[ writeData.write_count ]] [[ item.unit ]]</p>
+            </div>
+            <div class="btn-group" style="margin-top: auto; margin-bottom: 0;" v-if="item.status == 2">
+              <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 40%; font-size: 14px;"
+                href="javascript:;" @click="writeOff(idx)">核銷 (每單位)</a>
+              <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 40%; font-size: 14px;"
+                href="javascript:;" @click="writeOff(idx, true)">全部核銷</a>
+            </div>
+          </li>
+        </template>
+        <template v-for="(item, idx) in tool_data">
+          <li v-if="item.status == 1 && (show_status == 0 || show_status == 1)"
+            style="flex: 0 0 16%; background-color: rgb(226, 138, 115); box-shadow: 0 0 1px solid rgba(0,0,0,0.3); padding: 16px; color: #f1f1f1; margin-bottom: 30px; min-height: 350px; display: flex; flex-direction: column;">
+            <h2 style="font-size: 16px;">[[ item.name ]]</h2>
+            <p style="font-size: 14px;">剩餘數量: [[ item.initial_quantity ]] 個</p>
+            <p style="font-size: 14px;">需補貨: [[ item.need ]] [[ item.unit ]] </p>
+            <div style="display: flex; align-items: center; gap: 8px;" v-if="item.add_tools > 0">
+              <p style="font-size: 14px;">[[ item.add_date ]] 叫貨: [[ item.add_tools ]] [[ item.unit ]]</p>
+              <a @click="sub_tool(idx)" v-if="item.status == 1"
+                style="display: block; background-color: #fff; color: #ccc; text-align: center; text-decoration: none; flex: 0 0 40px; font-size: 12px; color: rgb(41, 41, 220)"
+                href="javascript:;">減少 -</a>
+            </div>
+            <div v-for="writeData in item.writeOff_data" style="display: flex; align-items: center; gap: 8px;">
+              <p style="font-size: 14px;">[[ writeData.write_date ]] 到貨: [[ writeData.write_count ]] [[ item.unit ]]</p>
+            </div>
+            <div class="btn-group" style="margin-top: auto; margin-bottom: 0;" v-if="item.status == 1">
+              <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 30%;"
+                href="javascript:;" @click="add_tools(idx)">叫貨</a>
+              <a style="display: block; padding: 3px; text-align: center; background-color: #fff; text-decoration: none; width: 30%;"
+                href="javascript:;" @click="add_tools(idx, true)">一次補齊</a>
+            </div>
+          </li>
+        </template>
+        <template v-for="item in tool_data">
+          <li v-if="item.status == 0 && (show_status == 0 || show_status == 3)"
+            style="flex: 0 0 16%; background-color: rgb(118, 192, 126); box-shadow: 0 0 1px solid rgba(0,0,0,0.3); padding: 16px; color: #f1f1f1; margin-bottom: 30px; display: flex; flex-direction: column; min-height: 150px;">
+            <h2 style="font-size: 18px;">[[ item.name ]]</h2>
+            <p>剩餘數量: [[item.initial_quantity]] 個</p>
+          </li>
+        </template>
+      </template>
+    </ul>
+    <div class="cart-icon" @click="is_cart = !is_cart">
+      <span>
+        <svg xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 576 512"><!--!Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+          <path fill="#fff"
+            d="M0 24C0 10.7 10.7 0 24 0H69.5c22 0 41.5 12.8 50.6 32h411c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3H170.7l5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5H488c13.3 0 24 10.7 24 24s-10.7 24-24 24H199.7c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5H24C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z" />
+        </svg>
+      </span>
+    </div>
+    <div class="carts" v-if="is_cart">
+      <h4>叫貨資訊</h4>
+      <hr>
+      <div class="desc">
+        <div v-for="item in temp_carts">
+          [[ item.name ]][[ item.add_tools ]][[ item.unit ]]
+        </div>
+      </div>
+      <div class="send_product" @click="send_order">
+        確認送出
+      </div>
+    </div>
+    <div class="set_surgeries_modal" v-if="surgeries_model">
+      <h2>手術扣存</h2>
+      <div>
+        <label for="surgeries_id">手術選擇</label>
+        <select name="surgeries_id" id="surgeries_id" v-model="temp_surgeries.name">
+          <option v-for="item in surgeries" :value="item.name">[[ item.name ]]</option>
+        </select>
+      </div>
+      <div>
+        <label for="surgeries_count">執行台數</label>
+        <input type="number" v-model="temp_surgeries.count" id="surgeries_count">
+      </div>
+      <div class="btn-group">
+        <a href="javascript:;" @click="surgeries_model = false, temp_surgeries = {name: '', count: 1}">取消</a>
+        <a href="javascript:;" @click="deduct_tools">確認執行</a>
+      </div>
+    </div>
+    <div class="mask" v-if="surgeries_model"></div>
+  </div>
+  <script src="https://unpkg.com/vue@3.4.5/dist/vue.global.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js"></script>
+  <script>
+    const app = Vue.createApp({
+      data() {
+        return {
+          tool_data: [],
+          temp_carts: [],
+          is_cart: false,
+          show_status: 0,
+          search_data: [],
+          search_text: "",
+          surgeries_model: false,
+          surgeries: [],
+          temp_surgeries: {
+            name: "",
+            count: 1
+          }
+        }
+      },
+      methods: {
+        async get_operations() {
+          try {
+            const response = await axios.get('/get_operation');
+            this.surgeries = response.data.data;
+          } catch (error) {
+            console.error('取得手術列表時發生錯誤:', error);
+          }
+        },
+        async deduct_tools() {
+          console.log(this.temp_surgeries);
+          axios.post('/operation_sub_tools', this.temp_surgeries)
+              .then(async (res) => {
+                this.surgeries_model = false;
+                this.temp_surgeries = {
+                  name: "",
+                  count: 1
+                }
+                await this.getData();
+                this.search_input();
+              })
+              .catch(err => {
+                console.log('Error confirming order', err);
+              });
+        },
+        async getData() {
+          await axios.get('/getData')
+            .then(res => {
+              console.log(res);
+              this.tool_data = res.data.data;
+              this.tool_data.forEach(item => {
+                if (item.add_tools == undefined) {
+                  item.add_tools = 0;
+                }
+              });
+
+              // 從 localStorage 中取得叫貨資訊
+              const storedToolData = localStorage.getItem('toolData');
+              if (storedToolData) {
+                const parsedToolData = JSON.parse(storedToolData);
+                parsedToolData.forEach(storedItem => {
+                  const toolItem = this.tool_data.find(item => item.name === storedItem.name);
+                  if (toolItem) {
+                    toolItem.add_tools = storedItem.add_tools;
+                    toolItem.add_date = storedItem.add_date;
+                  }
+                });
+              }
+
+              // 從 localStorage 中取得購物車內容
+              const storedTempCarts = localStorage.getItem('tempCarts');
+              if (storedTempCarts) {
+                this.temp_carts = JSON.parse(storedTempCarts);
+              }
+            })
+            .catch(err => {
+              console.log(err);
+            });
+        },
+        add_tools(idx, all = false) {
+          if (isNaN(idx)) {
+            let current_idx = this.tool_data.findIndex(item => item.name == idx.name);
+            if (all) {
+              this.tool_data[current_idx]['add_tools'] = this.tool_data[current_idx]['need'];
+            } else {
+              this.tool_data[current_idx]['add_tools'] += 1;
+            }
+            this.tool_data[current_idx]['add_date'] = this.getCurrentDate();
+            let flag = true;
+            this.temp_carts.forEach(item => {
+              if (item.name == this.tool_data[current_idx].name) {
+                flag = false;
+                item.add_tools = this.tool_data[current_idx]['add_tools'];
+              }
+            });
+            if (flag) {
+              this.temp_carts.push(this.tool_data[current_idx]);
+            }
+          } else {
+            if (all) {
+              this.tool_data[idx]['add_tools'] = this.tool_data[idx]['need'];
+            } else {
+              this.tool_data[idx]['add_tools'] += 1;
+            }
+            this.tool_data[idx]['add_date'] = this.getCurrentDate();
+            let flag = true;
+            this.temp_carts.forEach(item => {
+              if (item.name == this.tool_data[idx].name) {
+                flag = false;
+                item.add_tools = this.tool_data[idx]['add_tools'];
+              }
+            });
+            if (flag) {
+              this.temp_carts.push(this.tool_data[idx]);
+            }
+          }
+          // 將叫貨資訊和購物車內容儲存到 localStorage
+          const toolDataToStore = this.tool_data.filter(item => item.add_tools > 0);
+          localStorage.setItem('toolData', JSON.stringify(toolDataToStore));
+          localStorage.setItem('tempCarts', JSON.stringify(this.temp_carts));
+        },
+        sub_tool(idx) {
+          if (isNaN(idx)) {
+            let current_idx = this.tool_data.findIndex(item => item.name == idx.name);
+            this.tool_data[current_idx]['add_tools'] -= 1;
+            this.temp_carts.forEach(item => {
+              if (item.name == this.tool_data[current_idx].name) {
+                item.add_tools = this.tool_data[current_idx]['add_tools'];
+              }
+            });
+          } else {
+            this.tool_data[idx]['add_tools'] -= 1;
+            this.temp_carts.forEach(item => {
+              if (item.name == this.tool_data[idx].name) {
+                item.add_tools = this.tool_data[idx]['add_tools'];
+              }
+            });
+          }
+          // 將叫貨資訊和購物車內容儲存到 localStorage
+          const toolDataToStore = this.tool_data.filter(item => item.add_tools > 0);
+          localStorage.setItem('toolData', JSON.stringify(toolDataToStore));
+          localStorage.setItem('tempCarts', JSON.stringify(this.temp_carts));
+        },
+        writeOff(idx, all = false) {
+          let date = this.getCurrentDate();
+          if (isNaN(idx)) {
+            let current_idx = this.tool_data.findIndex(item => item.name == idx.name);
+            if (this.tool_data[current_idx]['writeOff_data'] == undefined) {
+              this.tool_data[current_idx]['writeOff_data'] = [];
+              if (all) {
+                this.tool_data[current_idx]['writeOff_data'].push(
+                  {
+                    "write_date": date,
+                    "write_count": this.tool_data[current_idx]['add_tools']
+                  }
+                );
+              } else {
+                this.tool_data[current_idx]['writeOff_data'].push(
+                  {
+                    "write_date": date,
+                    "write_count": 1
+                  }
+                );
+              }
+            } else {
+              let flag = true;
+              let total_count = 0;
+              this.tool_data[current_idx]['writeOff_data'].forEach(item => {
+                total_count += item.write_count;
+              });
+              this.tool_data[current_idx]['writeOff_data'].forEach(item => {
+                if (item.write_date == date) {
+                  if (all) {
+                    item.write_count += (this.tool_data[current_idx]['add_tools'] - total_count);
+                    flag = false;
+                  } else {
+                    item.write_count += 1;
+                    flag = false;
+                  }
+                }
+              });
+              if (flag) {
+                if (all) {
+                  this.tool_data[current_idx]['writeOff_data'].push(
+                    {
+                      "write_date": date,
+                      "write_count": this.tool_data[current_idx]['add_tools']
+                    }
+                  );
+                } else {
+                  this.tool_data[current_idx]['writeOff_data'].push(
+                    {
+                      "write_date": date,
+                      "write_count": 1
+                    }
+                  );
+                }
+              }
+            }
+            console.log(this.tool_data[current_idx]);
+            axios.post('/write_off', this.tool_data[current_idx])
+              .then(async (res) => {
+                console.log('Order confirmed', res);
+                if (res.data.status == 'success') {
+                  await this.getData();
+                  this.search_input();
+                }
+              })
+              .catch(err => {
+                console.log('Error confirming order', err);
+              });
+          } else {
+            if (this.tool_data[idx]['writeOff_data'] == undefined) {
+              this.tool_data[idx]['writeOff_data'] = [];
+              if (all) {
+                this.tool_data[idx]['writeOff_data'].push(
+                  {
+                    "write_date": date,
+                    "write_count": this.tool_data[idx]['add_tools']
+                  }
+                );
+              } else {
+                this.tool_data[idx]['writeOff_data'].push(
+                  {
+                    "write_date": date,
+                    "write_count": 1
+                  }
+                );
+              }
+            } else {
+              let flag = true;
+              let total_count = 0;
+              this.tool_data[idx]['writeOff_data'].forEach(item => {
+                total_count += item.write_count;
+              });
+              this.tool_data[idx]['writeOff_data'].forEach(item => {
+                if (item.write_date == date) {
+                  if (all) {
+                    item.write_count += (this.tool_data[idx]['add_tools'] - total_count);
+                    flag = false;
+                  } else {
+                    item.write_count += 1;
+                    flag = false;
+                  }
+                }
+              });
+              if (flag) {
+                if (all) {
+                  this.tool_data[idx]['writeOff_data'].push(
+                    {
+                      "write_date": date,
+                      "write_count": this.tool_data[idx]['add_tools']
+                    }
+                  );
+                } else {
+                  this.tool_data[idx]['writeOff_data'].push(
+                    {
+                      "write_date": date,
+                      "write_count": 1
+                    }
+                  );
+                }
+              }
+            }
+            axios.post('/write_off', this.tool_data[idx])
+              .then(res => {
+                console.log('Order confirmed', res);
+                if (res.data.status == 'success') {
+                  this.getData();
+                }
+              })
+              .catch(err => {
+                console.log('Error confirming order', err);
+              });
+          }
+        },
+        getCurrentDate() {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0'); // 月份從0開始
+          const day = String(now.getDate() + 1).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        },
+        send_order() {
+          axios.post('/comfrim_order', this.temp_carts)
+            .then(async (res) => {
+              console.log('Order confirmed', res);
+              if (res.data.status == 'success') {
+                this.temp_carts = [];
+                // 清空 localStorage 中的叫貨資訊和購物車內容
+                localStorage.removeItem('toolData');
+                localStorage.removeItem('tempCarts');
+                await this.getData();
+                this.search_input();
+              }
+            })
+            .catch(err => {
+              console.log('Error confirming order', err);
+            });
+        },
+        search_input() {
+          this.search_data = this.tool_data.filter(item => {
+            return item.name.includes(this.search_text);
+          });
+          console.log(this.search_data);
+        }
+      },
+      compilerOptions: {
+        delimiters: ["[[", "]]"]
+      },
+      async created() {
+        this.getData();
+        await this.get_operations();
+      }
+    });
+    app.mount('#app');
+  </script>
+</body>
+
+</html>

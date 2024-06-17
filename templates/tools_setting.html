@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>器具設定</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <style>
+    h1 {
+      text-align: center;
+    }
+
+    .tab-group {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 30px;
+
+      a {
+        text-decoration: none;
+      }
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .styled-table th,
+    .styled-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+
+    .styled-table th {
+      background-color: #f2f2f2;
+      text-align: left;
+    }
+
+    .styled-table tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .styled-table tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .styled-table th:first-child,
+    .styled-table td:first-child {
+      width: 40%;
+    }
+
+    .btn-group {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+    }
+
+    .search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .top-block {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      a {
+        display: block;
+        padding: 4px 12px;
+        text-align: center;
+        color: #fff;
+        background-color: rgb(52, 52, 170);
+        text-decoration: none;
+      }
+    }
+    .add-modal {
+      position: fixed;
+      width: 40%;
+      height: 400px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10000;
+      padding: 16px 0;
+      background-color: #fff;
+      box-shadow: 1px 0 4px rgba(0, 0, 0, .3);
+      display: flex;
+      flex-direction: column;
+      h2 {
+        margin: 0;
+        text-align: center;
+        font-size: 18px;
+      }
+      .btn-group {
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 40px;
+        margin-top: auto;
+        margin-bottom: 0;
+        a {
+          text-decoration: none;
+          display: block;
+          background-color: rgb(109, 109, 222);
+          color: #fff;
+          padding: 3px 12px;
+        }
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="add-modal" v-if="show_modal == true">
+      <h2>新增產品</h2>
+      <div style="padding: 12px">
+        <span style="padding-right: 10px;">器具名稱:</span>
+        <input type="text" v-model="add_data.name">
+      </div>
+      <div style="padding: 12px">
+        <span style="padding-right: 10px;">目前數量:</span>
+        <input type="text" v-model="add_data.initial_quantity">
+      </div>
+      <div style="padding: 12px">
+        <span style="padding-right: 10px;">單位數量:</span>
+        <input type="text" v-model="add_data.unit_quantity">
+      </div>
+      <div style="padding: 12px">
+        <span style="padding-right: 10px;">最低庫存 (單位):</span>
+        <input type="text" v-model="add_data.unit_count">
+      </div>
+      <div class="btn-group">
+        <a href="javascript:;" @click="hide_modal">取消</a>
+        <a href="javascript:;" @click="add_tools">確定</a>
+      </div>
+    </div>
+    <h1>器具設定</h1>
+    <div class="tab-group">
+      <a href="/">叫貨提示</a>
+      <a href="/tool_page">器材設定</a>
+      <!-- <a href="javascript:;">廠商設定</a> -->
+      <a href="/operation_page">手術消耗設定</a>
+    </div>
+    <div class="top-block">
+      <div class="search">
+        <p>搜尋:</p>
+        <input type="text" v-model="search_text" @input="search_input">
+      </div>
+      <a href="javascript:;" @click="show_modal = true">新增器具</a>
+    </div>
+    <table class="styled-table">
+      <thead>
+        <tr>
+          <th>品項名稱</th>
+          <th>最低庫存</th>
+          <th>目前庫存</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <template v-if="search_data.length == 0">
+          <tr v-for="(item, idx) in tool_data">
+            <td>[[ item.name ]]</td>
+            <td>
+              <input style="width: 30px; text-align: center;" type="text" :value="getRoundedQuantity(item)"
+                @input="updateQuantity($event, item)">
+              [[ item.unit ]]
+              <span style="padding-left: 20px;">
+                [[ item.unit_quantity ]] / [[ item.unit ]]
+              </span>
+            </td>
+            <td>
+              <input type="text" v-model="item.initial_quantity">
+            </td>
+            <td class="btn-group">
+              <a style="color: rgb(58, 58, 195)" href="javascript:;" @click="editTools(idx)">修改</a>
+              <a style="color: rgb(220, 85, 92)" href="javascript:;" @click="deleteTools(idx)">刪除</a>
+            </td>
+          </tr>
+        </template>
+        <template v-if="search_data.length > 0">
+          <tr v-for="(item, idx) in search_data">
+            <td>[[ item.name ]]</td>
+            <td>
+              <input style="width: 30px; text-align: center;" type="text" :value="getRoundedQuantity(item)"
+                @input="updateQuantity($event, item)">
+              [[ item.unit ]]
+              <span style="padding-left: 20px;">
+                [[ item.unit_quantity ]] / [[ item.unit ]]
+              </span>
+            </td>
+            <td>
+              <input type="text" v-model="item.initial_quantity">
+            </td>
+            <td class="btn-group">
+              <a style="color: rgb(58, 58, 195)" href="javascript:;" @click="editTools(item)">修改</a>
+              <a style="color: rgb(220, 85, 92)" href="javascript:;" @click="deleteTools(item)">刪除</a>
+            </td>
+          </tr>
+        </template>
+        <!-- More rows as needed -->
+      </tbody>
+    </table>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/vue@3.4.5/dist/vue.global.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js"></script>
+  <script>
+    const app = Vue.createApp({
+      data() {
+        return {
+          tool_data: [],
+          search_text: "",
+          search_data: [],
+          show_modal: false,
+          add_data: {
+            name: '',
+            initial_quantity: 0,
+            unit_quantity: 1,
+            unit_count: 0
+          }
+        }
+      },
+      methods: {
+        getData() {
+          axios.get('/tool_setting')
+            .then(res => {
+              console.log(res);
+              this.tool_data = res.data.data;
+            })
+            .catch(err => {
+              console.log(err);
+            })
+        },
+        updateQuantity(event, item) {
+          let value = parseFloat(event.target.value);
+          console.log(value);
+          if (!isNaN(value)) {
+            item.current_quantity = (value * item.unit_quantity) - 1;
+          }
+        },
+        hide_modal() {
+          this.show_modal = false
+          this.add_data = {
+            name: '',
+            initial_quantity: 0,
+            unit_quantity: 1,
+            unit_count: 0
+          }
+        },
+        editTools(idx) {
+          if (isNaN(idx)) {
+            let current_idx = this.tool_data.findIndex(item => item.name == idx.name)
+            this.tool_data[current_idx]['methods'] = 'edit';
+            this.tool_data[current_idx]['initial_quantity'] = +this.tool_data[current_idx]['initial_quantity']
+            this.tool_data[current_idx]['current_quantity'] = +this.tool_data[current_idx]['current_quantity']
+            axios.post('/tool_setting', this.tool_data[current_idx])
+              .then(res => {
+                console.log(res);
+                this.tool_data = res.data.data;
+                Swal.fire({
+                  icon: 'success',
+                  title: '修改成功',
+                  showConfirmButton: false,
+                  timer: 1500
+                });
+                this.search_input();
+              })
+              .catch(err => {
+                console.log(err);
+              })
+          } else {
+            this.tool_data[idx]['methods'] = 'edit';
+            this.tool_data[idx]['initial_quantity'] = +this.tool_data[idx]['initial_quantity']
+            this.tool_data[idx]['current_quantity'] = +this.tool_data[idx]['current_quantity']
+            axios.post('/tool_setting', this.tool_data[idx])
+              .then(res => {
+                console.log(res);
+                this.tool_data = res.data.data;
+                Swal.fire({
+                  icon: 'success',
+                  title: '修改成功',
+                  showConfirmButton: false,
+                  timer: 1500
+                });
+              })
+              .catch(err => {
+                console.log(err);
+              })
+          }
+        },
+        deleteTools(idx) {
+
+          console.log(idx, !isNaN(idx))
+          if (isNaN(idx)) {
+            let current_idx = this.tool_data.findIndex(item => item.name == idx.name)
+            this.tool_data[current_idx]['methods'] = 'delete';
+            console.log(this.tool_data[current_idx]);
+            axios.post('/tool_setting', this.tool_data[current_idx])
+              .then(res => {
+                console.log(res);
+                this.tool_data = res.data.data;
+                Swal.fire({
+                  icon: 'success',
+                  title: '刪除成功',
+                  showConfirmButton: false,
+                  timer: 1500
+                });
+                this.search_input();
+              })
+              .catch(err => {
+                console.log(err);
+              })
+          } else {
+            this.tool_data[idx]['methods'] = 'delete';
+            console.log(this.tool_data[idx]);
+            axios.post('/tool_setting', this.tool_data[idx])
+              .then(res => {
+                console.log(res);
+                this.tool_data = res.data.data;
+                Swal.fire({
+                  icon: 'success',
+                  title: '刪除成功',
+                  showConfirmButton: false,
+                  timer: 1500
+                });
+              })
+              .catch(err => {
+                console.log(err);
+              })
+          }
+        },
+        search_input() {
+          console.log('in');
+          this.search_data = this.tool_data.filter(item => {
+            return item.name.includes(this.search_text);
+          })
+          console.log(this.search_data);
+        },
+        getRoundedQuantity(item) {
+          if (item.unit_quantity == 1) {
+            return item.current_quantity + 1;
+          }
+          return Math.ceil(item.current_quantity / item.unit_quantity);
+        },
+        add_tools() {
+          let data = {
+            name: this.add_data.name,
+            initial_quantity: +this.add_data.initial_quantity,
+            unit_quantity: +this.add_data.unit_quantity,
+            current_quantity: (+this.add_data.unit_count * +this.add_data.unit_quantity) - 1
+          }
+          data['methods'] = 'create';
+          axios.post('/tool_setting', data)
+            .then(res => {
+              this.tool_data = res.data.data;
+              this.hide_modal();
+              Swal.fire({
+                icon: 'success',
+                title: '新增成功',
+                showConfirmButton: false,
+                timer: 1500
+              });
+            })
+            .catch(err => {
+              console.log(err);
+            })
+        }
+      },
+      compilerOptions: {
+        delimiters: ["[[", "]]"]
+      },
+      created() {
+        this.getData();
+      }
+    })
+    app.mount('#app');
+  </script>
+</body>
+
+</html>
