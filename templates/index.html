@@ -713,6 +713,10 @@
               this.temp_carts.forEach(item => {
                 data += `${item.name}${item.add_tools}${item.unit}\n`
               })
+              // localStorage.removeItem('toolData');
+              // localStorage.removeItem('tempCarts');
+              // await this.getData();
+              // this.search_input();
               if (res.data.status == 'success') {
                 axios.post('/send_message', {
                   message: '\n' + data

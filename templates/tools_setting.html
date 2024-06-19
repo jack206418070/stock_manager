@@ -189,7 +189,7 @@
       </div>
       <div class="btn-group">
         <a href="javascript:;" @click="saveEditTools">確定</a>
-        <a href="javascript:;" @click="show_edit_modal = false">取消</a>
+        <a href="javascript:;" @click="show_edit_modal = false, edit_data = {}">取消</a>
       </div>
     </div>
     <div class="add-modal" v-if="show_modal == true">
@@ -338,26 +338,38 @@
         },
         // 
         editTools(item) {
-          this.show_edit_modal = true;
-          console.log(item);
-          this.edit_data = {
-            name: item.name,
-            initial_quantity: item.initial_quantity,
-            unit_quantity: item.unit_quantity,
-            unit_count: Math.ceil(item.current_quantity / item.unit_quantity),
-            unit: item.unit
-          };
+          if (this.show_edit_modal == false) {
+            this.edit_data = {
+              name: item.name,
+              initial_quantity: item.initial_quantity,
+              unit_quantity: item.unit_quantity,
+              unit_count: Math.ceil(item.current_quantity / item.unit_quantity),
+              unit: item.unit,
+              old_name: item.name
+            };
+            this.show_edit_modal = true;
+          } else {
+            this.edit_data = {
+              name: item.name,
+              initial_quantity: item.initial_quantity,
+              unit_quantity: item.unit_quantity,
+              unit_count: Math.ceil(item.current_quantity / item.unit_quantity),
+              unit: item.unit,
+            };
+          }
         },
         saveEditTools() {
-          const idx = this.tool_data.findIndex(item => item.name === this.edit_data.name);
+          const idx = this.tool_data.findIndex(item => item.name === this.edit_data.old_name);
           if (idx !== -1) {
             const oldName = this.tool_data[idx]['name'];
+            console.log(oldName);
             this.tool_data[idx]['methods'] = 'edit';
             this.tool_data[idx]['old_name'] = oldName;
             this.tool_data[idx]['initial_quantity'] = +this.edit_data.initial_quantity;
             this.tool_data[idx]['current_quantity'] = (+this.edit_data.unit_count * +this.edit_data.unit_quantity) - 1;
             this.tool_data[idx]['unit_quantity'] = +this.edit_data.unit_quantity;
             this.tool_data[idx]['unit'] = this.edit_data.unit;
+            this.tool_data[idx]['name'] = this.edit_data.name;
 
             axios.post('/tool_setting', this.tool_data[idx])
               .then(async (res) => {
