@@ -657,8 +657,8 @@ def write_off():
     temp_count = 0
   else:
     status = 2
+    temp_count += (all_count - temp_count)
   json_data['initial_quantity'] += json_data['unit_quantity'] * (all_count - temp_count) 
-  temp_count += (all_count - temp_count)
   dbs[db_collection1].update_one({"name":json_data['name']}, {"$set": {"status": status, "writeOff_data": json_data['writeOff_data'], "add_date": json_data['add_date'], "add_tools": json_data['add_tools'], "initial_quantity": json_data['initial_quantity'], "temp_count": temp_count}})
   return jsonify({"status": "success"}), 200
 
