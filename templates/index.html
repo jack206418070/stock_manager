@@ -111,6 +111,17 @@
       color: #fff;
       cursor: pointer;
     }
+    .cancel_product {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      font-size: 14px;
+      padding: 5px 10px;
+      text-align: center;
+      background-color: rgb(222, 99, 97);
+      color: #fff;
+      cursor: pointer;
+    }
 
     .btn-group {
       display: flex;
@@ -377,8 +388,13 @@
           [[ item.name ]][[ item.add_tools ]][[ item.unit ]]
         </div>
       </div>
-      <div class="send_product" @click="send_order">
-        確認送出
+      <div>
+        <div class="cancel_product" @click="cancel_order">
+          全部清除
+        </div>
+        <div class="send_product" @click="send_order">
+          確認送出
+        </div>
       </div>
     </div>
     <div class="set_surgeries_modal" v-if="surgeries_model">
@@ -583,6 +599,14 @@
           const toolDataToStore = this.tool_data.filter(item => item.add_tools > 0);
           localStorage.setItem('toolData', JSON.stringify(toolDataToStore));
           localStorage.setItem('tempCarts', JSON.stringify(this.temp_carts));
+        },
+        async cancel_order() {
+          localStorage.removeItem('toolData');
+          localStorage.removeItem('tempCarts');
+          this.temp_carts = [];
+          this.getData();
+          await this.get_operations();
+          this.filtered_surgeries = this.surgeries;
         },
         async writeOff(idx, all = false) {
           let date = this.getCurrentDate();
